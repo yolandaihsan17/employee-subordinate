@@ -201,42 +201,43 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
   }
 }
 
-const ceo: Employee = {
-  uniqueId: 1,
-  name: 'Mark Zuckerberg',
-  subordinates: [{
-    uniqueId: 2,
-    name: 'Sarah Donald',
-    subordinates: [{
-      uniqueId: 4,
-      name: 'Cassandra Reynolds',
-      subordinates: [{
-        uniqueId: 5,
-        name: 'Mary Blue',
-        subordinates: []
-      }, {
-        uniqueId: 6,
-        name: 'Bob Saget',
-        subordinates: [{
-          uniqueId: 7,
-          name: 'Tina Teff',
-          subordinates: [{
-            uniqueId: 8,
-            name: 'Will Turner',
-            subordinates: []
-          }]
-        }]
-      }]
-    }]
-  }, {
-    uniqueId: 3,
-    name: 'Tyler Simpson',
-    subordinates: []
-  }]
-}
 
 function App() {
   // let employees: Employee[] = []
+
+  const ceo: Employee = {
+    uniqueId: 1,
+    name: 'Mark Zuckerberg',
+    subordinates: [{
+      uniqueId: 2,
+      name: 'Sarah Donald',
+      subordinates: [{
+        uniqueId: 4,
+        name: 'Cassandra Reynolds',
+        subordinates: [{
+          uniqueId: 5,
+          name: 'Mary Blue',
+          subordinates: []
+        }, {
+          uniqueId: 6,
+          name: 'Bob Saget',
+          subordinates: [{
+            uniqueId: 7,
+            name: 'Tina Teff',
+            subordinates: [{
+              uniqueId: 8,
+              name: 'Will Turner',
+              subordinates: []
+            }]
+          }]
+        }]
+      }]
+    }, {
+      uniqueId: 3,
+      name: 'Tyler Simpson',
+      subordinates: []
+    }]
+  }
 
   const App = new EmployeeOrgApp(ceo)
 
@@ -271,7 +272,7 @@ function App() {
   return (
     <div className="App">
       <h1>Please check the log</h1>
-      <button onClick={() => { App.undo(); console.log('Current state',App.ceo) }}>
+      <button onClick={() => { App.undo(); console.log('Current state', App.ceo) }}>
         Undo
       </button>
       <button onClick={moveEmployee} style={{ margin: '0px 12px' }}>
