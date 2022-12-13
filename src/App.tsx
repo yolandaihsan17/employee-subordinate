@@ -84,7 +84,7 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
 
   undo() {
     console.log('undo')
-    if (this.currentIndex === 0) console.log('can not undo anymore')
+    if (this.currentIndex === 0) window.alert('can not undo anymore')
     else {
       this.currentIndex = this.currentIndex < 0 ? this.updateHistory.length : this.currentIndex
       console.log('current index', this.currentIndex)
@@ -123,8 +123,6 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
       // remove this employee from his previous subordinate
       oldSpv.subordinates = oldSpv.subordinates.filter(item => item.uniqueId !== employee.uniqueId)
 
-      console.log(this.ceo)
-
       this.currentIndex--
 
     }
@@ -132,7 +130,7 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
 
   redo() {
     console.log('redo')
-    if (this.currentIndex >= (this.updateHistory.length) || this.currentIndex < 0) console.log('can not redo anymore')
+    if (this.currentIndex >= (this.updateHistory.length) || this.currentIndex < 0) window.alert('can not redo anymore')
     else {
       console.log(this.currentIndex)
       this.currentIndex++
@@ -147,11 +145,10 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
       // get his previous supervisor (which is his current supervisor)
       let oldSpv: Employee = this.getEmployees(this.ceo, lastUpdate.employeeID, true)
 
+      // reassign this employee subordinates, 
+      // reassign his current supervisor subordinates (remove him from his current supervisor), 
+      // and assign him to new supervisor
       this.setNewValues(newSpv, oldSpv, employee)
-
-      console.log(employee, newSpv, oldSpv, this.ceo)
-
-      // this.currentIndex--
     }
   }
 
@@ -174,26 +171,16 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
     // remove the current employee from his old spv
     oldSpv.subordinates = oldSpv.subordinates.filter(item => item.uniqueId !== employee.uniqueId)
 
-    // console.log('after update', this.ceo)
-
   }
 
-  // private setEmployees(spv: Employee, employee: Employee) {
-  //   if (spv.uniqueId === employee.uniqueId) { spv.subordinates === employee.subordinates; return true }
-  //   else {
-  //     if (spv.subordinates.length > 0) {
-  //       for (let subordinate of spv.subordinates) {
-  //         const res: any = this.setEmployees(subordinate, employee)
-  //         if (res) return true
-  //       }
-  //     }
-  //   }
-  // }
 
   private getEmployees(spv: Employee, employeeID: number, getSpv: boolean = false) {
+    // if searched employee is this employee, then return this employee
+    if (spv.uniqueId === employeeID) return spv
+
     // check if this employee subordinate the wanted employee 
     const empl = spv.subordinates.find(item => item.uniqueId === employeeID)
-    
+
     if (empl) {
       // if employee found, and current search mode is to get the spv, then return the spv
       if (getSpv) return spv
@@ -277,20 +264,20 @@ function App() {
       }
     }
 
-    console.log('after update', App.ceo)
+    console.log('Current State', App.ceo)
 
   }
 
   return (
     <div className="App">
       <h1>Please check the log</h1>
-      <button onClick={() => App.undo()}>
+      <button onClick={() => { App.undo(); console.log('Current state',App.ceo) }}>
         Undo
       </button>
       <button onClick={moveEmployee} style={{ margin: '0px 12px' }}>
         Move an Employee
       </button>
-      <button onClick={() => App.redo()}>
+      <button onClick={() => { App.redo(); console.log('Current State', App.ceo) }}>
         Redo
       </button>
 
