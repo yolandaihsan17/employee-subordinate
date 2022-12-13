@@ -19,3 +19,6 @@ an app written in typescript to manage employee organization
 
 ## Redo an action
 **Press the "Redo" Button**
+
+## Note
+**Every action, will be logged on to the console. So please check the console**
