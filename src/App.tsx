@@ -34,34 +34,61 @@ interface ILastUpdate {
 
 class EmployeeOrgApp implements IEmployeeOrgApp {
   ceo: Employee;
-  private updateHistory: ILastUpdate[];
-  private currentIndex: number | null;
+  private updateHistory: ILastUpdate[]; // to save the history of user action, the changes of organization
+  private currentIndex: number; //to indicate user redo and undo action, if < 0, that means user still hasn't done any changes
 
   constructor(ceo: Employee) {
     this.ceo = ceo
     this.updateHistory = []
-    this.currentIndex = null
+    this.currentIndex = -1
   }
 
   move(employeeID: number, newSpvID: number) {
+    // find the employee
     let employee: Employee = this.getEmployees(this.ceo, employeeID)
-    let newSpv: Employee = this.getEmployees(this.ceo, newSpvID)
-    let oldSpv: Employee = this.getEmployees(this.ceo, employeeID, true)
 
-    if (newSpv.subordinates.includes(employee)) console.log('already under this supervisor')
-    else {
-      let employeeSubordinateIDs = employee.subordinates.map(item => item.uniqueId)
-      this.setNewValues(newSpv, oldSpv, employee)
-      this.updateHistory.push({ employeeID: employee.uniqueId, prevSpv: oldSpv.uniqueId, newSpv: newSpv.uniqueId, previousSubordinates: employeeSubordinateIDs })
+    // if employee found, then get his new supervisor, and his current supervisor
+    if (employee) {
+      let newSpv: Employee = this.getEmployees(this.ceo, newSpvID) //get his new supervisor
+      let oldSpv: Employee = this.getEmployees(this.ceo, employeeID, true) //get his current supervisor
+
+      // if this employee already under this supervisor, then do nothing
+      if (newSpv.subordinates.includes(employee)) console.log('already under this supervisor')
+
+      else {
+        // get all employees id that under this employee
+        let employeeSubordinateIDs = employee.subordinates.map(item => item.uniqueId)
+
+        // reassign this employee subordinates, 
+        // reassign his current supervisor subordinates (remove him from his current supervisor), 
+        // and assign him to new supervisor
+        this.setNewValues(newSpv, oldSpv, employee)
+
+        // so if user previously already do the undo method, take update history only from start until the current index
+        if (this.updateHistory.length > 0 && this.currentIndex < this.updateHistory.length) {
+          this.updateHistory = this.updateHistory.slice(0, this.currentIndex)
+        }
+
+        // then push this update to update history variable
+        this.updateHistory.push({ employeeID: employee.uniqueId, prevSpv: oldSpv.uniqueId, newSpv: newSpv.uniqueId, previousSubordinates: employeeSubordinateIDs })
+        this.currentIndex = this.updateHistory.length
+
+        console.log(`${employee.name} moved to be under ${newSpv.name}`)
+        console.log('Update history:', this.updateHistory)
+      }
+    } else {
+      window.alert('no employee found with that id')
+      return;
     }
   }
 
   undo() {
     console.log('undo')
-    if (this.currentIndex && this.currentIndex < 1) console.log('can not undo anymore')
+    if (this.currentIndex === 0) console.log('can not undo anymore')
     else {
-      this.currentIndex = this.updateHistory.length - 1
-      const lastUpdate = this.updateHistory[this.currentIndex]
+      this.currentIndex = this.currentIndex < 0 ? this.updateHistory.length : this.currentIndex
+      console.log('current index', this.currentIndex)
+      const lastUpdate = this.updateHistory[this.currentIndex - 1]
 
       // get the employee
       let employee: Employee = this.getEmployees(this.ceo, lastUpdate.employeeID)
@@ -98,17 +125,38 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
 
       console.log(this.ceo)
 
+      this.currentIndex--
+
     }
   }
 
   redo() {
     console.log('redo')
+    if (this.currentIndex >= (this.updateHistory.length) || this.currentIndex < 0) console.log('can not redo anymore')
+    else {
+      console.log(this.currentIndex)
+      this.currentIndex++
+      const lastUpdate = this.updateHistory[this.currentIndex - 1]
+
+      // get the employee
+      let employee: Employee = this.getEmployees(this.ceo, lastUpdate.employeeID)
+
+      // get the new supervisor (which is his previous supervisor)
+      let newSpv: Employee = this.getEmployees(this.ceo, lastUpdate.newSpv)
+
+      // get his previous supervisor (which is his current supervisor)
+      let oldSpv: Employee = this.getEmployees(this.ceo, lastUpdate.employeeID, true)
+
+      this.setNewValues(newSpv, oldSpv, employee)
+
+      console.log(employee, newSpv, oldSpv, this.ceo)
+
+      // this.currentIndex--
+    }
   }
 
 
   private setNewValues(newSpv: Employee, oldSpv: Employee, employee: Employee) {
-
-    // this.setNewValues(newSpv, oldSpv, employee)
 
     let employeeSubordinates = employee.subordinates
 
@@ -145,6 +193,7 @@ class EmployeeOrgApp implements IEmployeeOrgApp {
   private getEmployees(spv: Employee, employeeID: number, getSpv: boolean = false) {
     // check if this employee subordinate the wanted employee 
     const empl = spv.subordinates.find(item => item.uniqueId === employeeID)
+    
     if (empl) {
       // if employee found, and current search mode is to get the spv, then return the spv
       if (getSpv) return spv
@@ -200,65 +249,49 @@ const ceo: Employee = {
 }
 
 function App() {
-  const [count, setCount] = useState(0)
-  let employees: Employee[] = []
+  // let employees: Employee[] = []
 
   const App = new EmployeeOrgApp(ceo)
 
-  function getEmployees(head: Employee) {
-    if (head.subordinates.length > 0) {
-      for (let subordinate of head.subordinates) {
-        getEmployees(subordinate)
-      }
-    }
-    employees.push(head)
-  }
+  // function getEmployees(head: Employee) {
+  //   if (head.subordinates.length > 0) {
+  //     for (let subordinate of head.subordinates) {
+  //       getEmployees(subordinate)
+  //     }
+  //   }
+  //   employees.push(head)
+  // }
 
-  getEmployees(App.ceo)
+  // getEmployees(App.ceo)
 
   function moveEmployee() {
-    // const employeeID: any = window.prompt('Select employee Id')
-    // let targetEmployee: any
+    const employeeID: any = window.prompt('Select employee Id')
+    let targetEmployee: any
 
-    // if (+employeeID) {
-    //   targetEmployee = window.prompt('Will be moved under subordinates of: (insert Employee ID)')
-    //   App.move(+employeeID, +targetEmployee)
-    // }
+    if (+employeeID === 1) {
+      window.alert('opps, dont move the CEO >:| ')
+    } else {
+      if (+employeeID) {
+        targetEmployee = window.prompt('Will be moved under subordinates of: (insert Employee ID)')
+        App.move(+employeeID, +targetEmployee)
+      }
+    }
 
-    App.move(6, 7)
     console.log('after update', App.ceo)
 
   }
 
-  // console.log(employees)
-
   return (
     <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <h1>Please check the log</h1>
       <button onClick={() => App.undo()}>
         Undo
       </button>
-      <button onClick={moveEmployee}>
+      <button onClick={moveEmployee} style={{ margin: '0px 12px' }}>
         Move an Employee
+      </button>
+      <button onClick={() => App.redo()}>
+        Redo
       </button>
 
     </div>
